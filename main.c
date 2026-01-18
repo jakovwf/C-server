@@ -1,12 +1,7 @@
 /*
- * HTTP Echo Server - Prima poruke iz browsera i odgovara
- * Kompajliranje: gcc http_echo_server.c -o http_echo.exe -lws2_32
- * 
- * KAKO KORISTITI:
- * 1. Pokreni: http_echo.exe
- * 2. Otvori browser: http://localhost:8080
- * 3. Unesi poruku u formu i klikni "Pošalji"
- * 4. Server će ti odgovoriti sa tvojom porukom!
+ * HTTP Echo Server - Čist konzolni output
+ * Kompajliranje: gcc main.c -o main.exe -lws2_32
+ * Pokretanje: .\main.exe
  */
 
 #include <stdio.h>
@@ -19,7 +14,7 @@
 #define PORT 8080
 #define BUFFER_SIZE 8192
 
-// Funkcija za dekodiranje URL-encoded stringova (npr. "Hello+World" -> "Hello World")
+// URL dekodiranje
 void urlDecode(char* dst, const char* src) {
     char a, b;
     while (*src) {
@@ -43,14 +38,13 @@ void urlDecode(char* dst, const char* src) {
     *dst = '\0';
 }
 
-// Izvlači vrednost parametra iz query stringa
-// Npr. "?message=Hello&name=Petar" -> getParam("message") vraća "Hello"
+// Izvlačenje parametra iz query stringa
 char* getParam(char* query, const char* param) {
     static char value[1024];
     char* start = strstr(query, param);
     if (!start) return NULL;
     
-    start += strlen(param) + 1; // Preskoči "param="
+    start += strlen(param) + 1;
     char* end = strchr(start, '&');
     
     if (end) {
@@ -60,7 +54,6 @@ char* getParam(char* query, const char* param) {
         strcpy(value, start);
     }
     
-    // URL dekodiranje
     char decoded[1024];
     urlDecode(decoded, value);
     strcpy(value, decoded);
@@ -68,10 +61,9 @@ char* getParam(char* query, const char* param) {
     return value;
 }
 
-// Generiše HTML stranicu sa formom ili odgovorom
+// HTML forma
 void generateHTML(char* output, const char* message) {
     if (message == NULL || strlen(message) == 0) {
-        // Početna stranica sa formom
         sprintf(output,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/html; charset=UTF-8\r\n"
@@ -154,25 +146,24 @@ void generateHTML(char* output, const char* message) {
             "</head>\n"
             "<body>\n"
             "    <div class='container'>\n"
-            "        <h1>📡 C Echo Server</h1>\n"
+            "        <h1>C Echo Server</h1>\n"
             "        <form action='/' method='GET'>\n"
             "            <div class='form-group'>\n"
             "                <label for='message'>Tvoja poruka:</label>\n"
             "                <input type='text' id='message' name='message' \n"
             "                       placeholder='Unesi poruku...' required>\n"
             "            </div>\n"
-            "            <button type='submit'>🚀 Pošalji serveru</button>\n"
+            "            <button type='submit'>Posalji serveru</button>\n"
             "        </form>\n"
             "        <div class='info'>\n"
-            "            <strong>ℹ️ Kako radi:</strong><br>\n"
-            "            Server je napisan u C jeziku i sluša na portu %d.<br>\n"
-            "            Unesi poruku i server će ti je vratiti nazad (echo)!\n"
+            "            <strong>Kako radi:</strong><br>\n"
+            "            Server je napisan u C jeziku i slusa na portu %d.<br>\n"
+            "            Unesi poruku i server ce ti je vratiti nazad (echo)!\n"
             "        </div>\n"
             "    </div>\n"
             "</body>\n"
             "</html>", PORT);
     } else {
-        // Stranica sa odgovorom
         sprintf(output,
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/html; charset=UTF-8\r\n"
@@ -229,12 +220,12 @@ void generateHTML(char* output, const char* message) {
             "</head>\n"
             "<body>\n"
             "    <div class='container'>\n"
-            "        <h1>✅ Server je odgovorio!</h1>\n"
+            "        <h1>Server je odgovorio!</h1>\n"
             "        <div class='response'>\n"
             "            <strong>Echo odgovor:</strong><br>\n"
             "            \"%s\"\n"
             "        </div>\n"
-            "        <a href='/'>← Pošalji novu poruku</a>\n"
+            "        <a href='/'>Posalji novu poruku</a>\n"
             "    </div>\n"
             "</body>\n"
             "</html>", message);
@@ -252,13 +243,13 @@ int main() {
 
     // Inicijalizacija
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        printf("WSAStartup failed.\n");
+        printf("GRESKA: WSAStartup nije uspeo.\n");
         return 1;
     }
 
     serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (serverSocket == INVALID_SOCKET) {
-        printf("Socket creation failed.\n");
+        printf("GRESKA: Kreiranje socketa nije uspelo.\n");
         WSACleanup();
         return 1;
     }
@@ -270,7 +261,7 @@ int main() {
     serverAddr.sin_port = htons(PORT);
 
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-        printf("Bind failed. Port %d je zauzet.\n", PORT);
+        printf("GRESKA: bind() nije uspeo. Port %d je mozda zauzet.\n", PORT);
         closesocket(serverSocket);
         WSACleanup();
         return 1;
@@ -278,19 +269,19 @@ int main() {
 
     // Listen
     if (listen(serverSocket, 10) == SOCKET_ERROR) {
-        printf("Listen failed.\n");
+        printf("GRESKA: listen() nije uspeo.\n");
         closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
 
-    printf("╔══════════════════════════════════════════════════╗\n");
-    printf("║  🚀 HTTP Echo Server pokrenut na portu %d      ║\n", PORT);
-    printf("╚══════════════════════════════════════════════════╝\n\n");
-    printf("📱 Otvori browser i idi na:\n");
-    printf("   👉 http://localhost:%d\n\n", PORT);
+    // Čist, čitljiv banner
+    printf("========================================================\n");
+    printf("  HTTP Echo Server - Pokrenut na portu %d\n", PORT);
+    printf("========================================================\n\n");
+    printf("Otvori browser: http://localhost:%d\n\n", PORT);
     printf("Pritisnite Ctrl+C za izlaz.\n");
-    printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+    printf("--------------------------------------------------------\n\n");
 
     while (1) {
         clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientAddrLen);
@@ -305,48 +296,39 @@ int main() {
         if (recvSize > 0) {
             buffer[recvSize] = '\0';
 
-            // Prikaži u konzoli
-            printf("━━━ Zahtev #%d ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n", requestCount);
-            printf("Od: %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-
             // Parsiranje GET zahteva
-            // Format: "GET /?message=Hello HTTP/1.1"
             char* requestLine = strtok(buffer, "\r\n");
             if (requestLine) {
-                printf("Zahtev: %s\n", requestLine);
-
-                // Pronađi query string (deo posle ?)
+                // Pronađi query string
                 char* queryStart = strchr(requestLine, '?');
                 char* message = NULL;
 
                 if (queryStart) {
-                    // Odseci " HTTP/1.1" sa kraja
                     char* httpVersion = strstr(queryStart, " HTTP");
                     if (httpVersion) *httpVersion = '\0';
-
-                    // Izvuci parametar "message"
                     message = getParam(queryStart, "message");
-                    
-                    if (message) {
-                        printf("💬 Poruka: \"%s\"\n", message);
-                    }
                 }
 
-                // Generiši odgovor
-                memset(response, 0, BUFFER_SIZE);
-                generateHTML(response, message);
-
-                // Pošalji odgovor
-                send(clientSocket, response, strlen(response), 0);
+                // Konzolni output
+                printf("[Zahtev #%d]\n", requestCount);
+                printf("  Od:      %s:%d\n", 
+                       inet_ntoa(clientAddr.sin_addr), 
+                       ntohs(clientAddr.sin_port));
+                printf("  Metoda:  %s\n", requestLine);
                 
                 if (message) {
-                    printf("✅ Poslat echo odgovor\n");
+                    printf("  Poruka:  \"%s\"\n", message);
+                    printf("  Status:  Echo odgovor poslat\n");
                 } else {
-                    printf("📝 Poslata forma\n");
+                    printf("  Status:  HTML forma poslata\n");
                 }
-            }
+                printf("\n");
 
-            printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n");
+                // Generiši i pošalji odgovor
+                memset(response, 0, BUFFER_SIZE);
+                generateHTML(response, message);
+                send(clientSocket, response, strlen(response), 0);
+            }
         }
 
         closesocket(clientSocket);
@@ -358,78 +340,42 @@ int main() {
 }
 
 /*
- * ════════════════════════════════════════════════════════════
- *  OBJAŠNJENJE - KAKO OVO RADI
- * ════════════════════════════════════════════════════════════
+ * ========================================================
+ *  KOMPAJLIRANJE I POKRETANJE
+ * ========================================================
  * 
- * 1. BROWSER OTVARA STRANICU (GET /):
- *    Browser → GET / HTTP/1.1
- *    Server  → Šalje HTML formu
+ * 1. Kompajliraj:
+ *    gcc main.c -o main.exe -lws2_32
  * 
- * 2. KORISNIK UNOSI PORUKU:
- *    Unese: "Cao server!"
- *    Klikne: "Pošalji"
+ * 2. Pokreni:
+ *    .\main.exe
  * 
- * 3. BROWSER ŠALJE GET ZAHTEV:
- *    Browser → GET /?message=Cao+server! HTTP/1.1
- *              └─────┬─────────────────┘
- *                Query string (parametri)
+ * 3. Otvori browser:
+ *    http://localhost:8080
  * 
- * 4. SERVER PARSIRA ZAHTEV:
- *    - Pronalazi "?" u zahtev liniji
- *    - Izvlači vrednost parametra "message"
- *    - URL dekoduje (+ → razmak, %20 → razmak, itd.)
+ * ========================================================
+ *  OČEKIVANI OUTPUT
+ * ========================================================
  * 
- * 5. SERVER GENERIŠE ODGOVOR:
- *    - Kreira HTML sa tvojom porukom
- *    - Šalje nazad browseru
+ * ========================================================
+ *   HTTP Echo Server - Pokrenut na portu 8080
+ * ========================================================
  * 
- * 6. BROWSER PRIKAZUJE REZULTAT:
- *    "Echo odgovor: Cao server!"
+ * Otvori browser: http://localhost:8080
  * 
- * ════════════════════════════════════════════════════════════
- *  URL ENCODING (zašto je potrebno)
- * ════════════════════════════════════════════════════════════
+ * Pritisnite Ctrl+C za izlaz.
+ * --------------------------------------------------------
  * 
- * URL ne može sadržati razmake i specijalne znakove.
- * Browser automatski konvertuje:
+ * [Zahtev #1]
+ *   Od:      127.0.0.1:52341
+ *   Metoda:  GET / HTTP/1.1
+ *   Status:  HTML forma poslata
  * 
- *   Unos: "Cao server!"
- *   URL:  "Cao+server!"  ili  "Cao%20server!"
- *   
- *   Unos: "Petar Petrović"
- *   URL:  "Petar+Petrovi%C4%87"
+ * [Zahtev #2]
+ *   Od:      127.0.0.1:52342
+ *   Metoda:  GET /?message=Hello HTTP/1.1
+ *   Poruka:  "Hello"
+ *   Status:  Echo odgovor poslat
  * 
- * Server mora dekodovati nazad u originalni tekst.
- * 
- * ════════════════════════════════════════════════════════════
- *  TESTIRANJE
- * ════════════════════════════════════════════════════════════
- * 
- * 1. Kompajliraj: gcc http_echo_server.c -o http_echo.exe -lws2_32
- * 2. Pokreni: http_echo.exe
- * 3. Otvori browser: http://localhost:8080
- * 4. Unesi poruku: "Hello World!"
- * 5. Klikni "Pošalji serveru"
- * 6. Vidi odgovor: "Echo odgovor: Hello World!"
- * 
- * PROBAJ RAZLIČITE PORUKE:
- * - "Cao!"
- * - "Petar Petrović"
- * - "123 test 456"
- * - "!@#$%^&*()"
- * 
- * ════════════════════════════════════════════════════════════
- *  VEZA SA CGI IZ PDF-A
- * ════════════════════════════════════════════════════════════
- * 
- * Ovaj server radi ISTO što i CGI:
- * 
- * CGI:
- *   Web server → getenv("QUERY_STRING") → CGI program
- * 
- * Ovaj server:
- *   Browser → recv(HTTP zahtev) → parsira query string
- * 
- * Razlika: CGI je EKSTERNI program, ovaj server je INTEGRISANI.
+ * ========================================================
  */
